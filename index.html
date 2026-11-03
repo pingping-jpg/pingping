@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>영화 티어리스트</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>🎬 나만의 영화 티어리스트</h1>
+    
+    <div class="input-container">
+        <input type="text" id="movie-input" placeholder="영화 제목을 입력하세요">
+        <button id="add-button">추가</button>
+    </div>
+
+    <div class="tier-container">
+        <div class="tier-row">
+            <div class="label s-tier">S</div>
+            <div class="drop-zone" id="tier-s"></div>
+        </div>
+        <div class="tier-row">
+            <div class="label a-tier">A</div>
+            <div class="drop-zone" id="tier-a"></div>
+        </div>
+        <div class="tier-row">
+            <div class="label b-tier">B</div>
+            <div class="drop-zone" id="tier-b"></div>
+        </div>
+        <div class="tier-row">
+            <div class="label c-tier">C</div>
+            <div class="drop-zone" id="tier-c"></div>
+        </div>
+        <div class="tier-row">
+            <div class="label d-tier">D</div>
+            <div class="drop-zone" id="tier-d"></div>
+        </div>
+    </div>
+
+    <h3>🧺 영화 바구니 (드래그해서 옮기세요)</h3>
+    <div id="basket" class="drop-zone"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
