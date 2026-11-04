@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌸 나만의 영화 티어리스트</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-image: url('https://img.freepik.com/free-vector/cute-floral-seamless-pattern_1035-17105.jpg');
+            background-size: cover;
+            background-attachment: fixed;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        h1 { text-align: center; color: #ff6b6b; }
+
+        .input-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ffccd5;
+            border-radius: 10px;
+            outline: none;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .add-btn { background-color: #ff8787; color: white; font-weight: bold; }
+        .reset-btn { background-color: #adb5bd; color: white; }
+
+        .tier-row {
+            display: flex;
+            margin-bottom: 10px;
+            min-height: 90px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #eee;
+        }
+        .tier-label {
+            width: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 24px;
+            color: white;
+        }
+        .tier-S { background-color: #ff7f7f; }
+        .tier-A { background-color: #ffbf7f; }
+        .tier-B { background-color: #ffff7f; color: #555; }
+        .tier-C { background-color: #7fff7f; color: #555; }
+        .tier-D { background-color: #7f7fff; }
+
+        .tier-content {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 10px;
+            background-color: rgba(255,255,255,0.5);
+            min-height: 70px;
+        }
+
+        /* 영화 카드 */
+        .movie-card {
+            background: white;
+            padding: 10px 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+            cursor: grab;
+            border: 1px solid #eee;
+            position: relative;
+        }
+        .movie-name { font-weight: bold; font-size: 15px; margin-right: 20px; }
+        
+        /* 별점 스타일 (색깔 없이 무채색 톤) */
+        .star-rating {
+            display: flex;
+            gap: 2px;
+        }
+        .star {
+            cursor: pointer;
+            font-size: 18px;
+            color: #ccc; /* 기본 회색 */
+            transition: 0.2s;
+        }
+        .star.active {
+            color: #333; /* 체크 시 검정색 */
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            color: #ff6b6b;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .pool-section {
+            margin-top: 30px;
+            border-top: 2px dashed #ffccd5;
+            padding-top: 20px;
+        }
+        .pool-title { font-weight: bold; margin-bottom: 10px; color: #ff8787; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🌸 영화 티어리스트</h1>
+
+    <div class="input-section">
+        <!-- 엔터키 감지 이벤트 추가 -->
+        <input type="text" id="movie-input" placeholder="영화 제목을 입력하고 엔터를 누르세요..." onkeypress="if(event.keyCode==13) addMovie()">
+        <button class="add-btn" onclick="addMovie()">추가</button>
+        <button class="reset-btn" onclick="resetAll()">초기화</button>
+    </div>
+
+    <div id="tier-container">
+        <div class="tier-row"><div class="tier-label tier-S">S</div><div class="tier-content" id="tier-S"></div></div>
+        <div class="tier-row"><div class="tier-label tier-A">A</div><div class="tier-content" id="tier-A"></div></div>
+        <div class="tier-row"><div class="tier-label tier-B">B</div><div class="tier-content" id="tier-B"></div></div>
+        <div class="tier-row"><div class="tier-label tier-C">C</div><div class="tier-content" id="tier-C"></div></div>
+        <div class="tier-row"><div class="tier-label tier-D">D</div><div class="tier-content" id="tier-D"></div></div>
+    </div>
+
+    <div class="pool-section">
+        <div class="pool-title">🎬 영화 보관함</div>
+        <div id="movie-pool" class="tier-content"></div>
+    </div>
+</div>
+
+<script>
+    window.onload = () => {
+        loadData();
+        initDragAndDrop();
+    };
+
+    function initDragAndDrop() {
+        const containers = document.querySelectorAll('.tier-content');
+        containers.forEach(container => {
+            new Sortable(container, {
+                group: 'shared',
+                animation: 150,
+                onEnd: saveData
+            });
+        });
+    }
+
+    // 영화 추가
+    function addMovie(title = null, rating = 0) {
+        const input = document.getElementById('movie-input');
+        const movieTitle = title || input.value.trim();
+
+        if (!movieTitle) return;
+
+        const card = document.createElement('div');
+        card.className = 'movie-card';
+        
+        // 별 5개 생성
+        let starsHtml = '';
+        for(let i = 1; i <= 5; i++) {
+            const activeClass = i <= rating ? 'active' : '';
+            starsHtml += `<span class="star ${activeClass}" onclick="setRating(this, ${i})">★</span>`;
+        }
+
+        card.innerHTML = `
+            <span class="delete-btn" onclick="deleteMovie(this)">X</span>
+            <span class="movie-name">${movieTitle}</span>
+            <div class="star-rating">${starsHtml}</div>
+        `;
+
+        document.getElementById('movie-pool').appendChild(card);
+        if (!title) input.value = '';
+        saveData();
+    }
+
+    // 별점 설정 함수
+    function setRating(el, score) {
+        const ratingContainer = el.parentElement;
+        const stars = ratingContainer.querySelectorAll('.star');
+        
+        stars.forEach((star, index) => {
+            if (index < score) {
+                star.classList.add('active');
+            } else {
+                star.classList.remove('active');
+            }
+        });
+        saveData();
+    }
+
+    function deleteMovie(el) {
+        if(confirm('삭제하시겠습니까?')) {
+            el.parentElement.remove();
+            saveData();
+        }
+    }
+
+    function resetAll() {
+        if(confirm('모든 데이터를 초기화할까요?')) {
+            localStorage.removeItem('movieTierDataV2');
+            location.reload();
+        }
+    }
+
+    function saveData() {
+        const data = {};
+        document.querySelectorAll('.tier-content').forEach(container => {
+            const movies = [];
+            container.querySelectorAll('.movie-card').forEach(card => {
+                const activeStars = card.querySelectorAll('.star.active').length;
+                movies.push({
+                    title: card.querySelector('.movie-name').innerText,
+                    rating: activeStars
+                });
+            });
+            data[container.id] = movies;
+        });
+        localStorage.setItem('movieTierDataV2', JSON.stringify(data));
+    }
+
+    function loadData() {
+        const savedData = localStorage.getItem('movieTierDataV2');
+        if (!savedData) return;
+
+        const data = JSON.parse(savedData);
+        for (const [containerId, movies] of Object.entries(data)) {
+            const container = document.getElementById(containerId);
+            movies.forEach(movie => {
+                addMovieToContainer(container, movie.title, movie.rating);
+            });
+        }
+    }
+
+    // 로드용 보조 함수
+    function addMovieToContainer(container, title, rating) {
+        const card = document.createElement('div');
+        card.className = 'movie-card';
+        let starsHtml = '';
+        for(let i = 1; i <= 5; i++) {
+            const activeClass = i <= rating ? 'active' : '';
+            starsHtml += `<span class="star ${activeClass}" onclick="setRating(this, ${i})">★</span>`;
+        }
+        card.innerHTML = `
+            <span class="delete-btn" onclick="deleteMovie(this)">X</span>
+            <span class="movie-name">${title}</span>
+            <div class="star-rating">${starsHtml}</div>
+        `;
+        container.appendChild(card);
+    }
+</script>
+
+</body>
+</html>
