@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌸 나의 영화 티어리스트</title>
+    <!-- 드래그 앤 드롭 라이브러리 (마우스/터치 지원) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        :root {
+            --s-color: #ff4081;
+            --a-color: #ff80ab;
+            --b-color: #ffd54f;
+            --c-color: #81c784;
+            --d-color: #64b5f6;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background: linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), 
+                        url('https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=1600&q=80');
+            background-size: cover;
+            background-attachment: fixed;
+            color: #4e342e;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #ad1457;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 2px white;
+        }
+
+        /* 상단 컨트롤 */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        input {
+            padding: 12px 20px;
+            border: 2px solid #f8bbd0;
+            border-radius: 30px;
+            width: 250px;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.1s;
+        }
+
+        button:active { transform: scale(0.95); }
+
+        #add-btn { background-color: #f06292; color: white; }
+        #reset-btn { background-color: #9e9e9e; color: white; }
+
+        /* 티어리스트 영역 */
+        .tier-board {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 40px;
+        }
+
+        .tier-row {
+            display: flex;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.8);
+            min-height: 100px;
+        }
+
+        .tier-row:last-child { border-bottom: none; }
+
+        .tier-label {
+            width: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 900;
+            color: white;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .s { background-color: var(--s-color); }
+        .a { background-color: var(--a-color); }
+        .b { background-color: var(--b-color); }
+        .c { background-color: var(--c-color); }
+        .d { background-color: var(--d-color); }
+
+        .tier-content {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            padding: 15px;
+            gap: 12px;
+            min-height: 70px;
+        }
+
+        /* 보관함 영역 */
+        .pool-section {
+            background: rgba(255, 255, 255, 0.6);
+            border: 2px dashed #f06292;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .pool-title {
+            text-align: center;
+            font-weight: bold;
+            color: #ad1457;
+            margin-bottom: 15px;
+        }
+
+        /* 영화 카드 */
+        .movie-card {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            width: 110px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: grab;
+            border: 1px solid #fce4ec;
+            touch-action: none;
+        }
+
+        .movie-card:active { cursor: grabbing; }
+
+        .movie-title {
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+
+        .stars {
+            color: #ffca28;
+            cursor: pointer;
+            font-size: 1.1rem;
+            user-select: none;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 22px;
+            height: 22px;
+            background: #ff5252;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* 드래그 중인 요소 스타일 */
+        .sortable-ghost { opacity: 0.3; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🌸 영화 티어리스트</h1>
+
+    <div class="controls">
+        <input type="text" id="movie-input" placeholder="영화 제목을 입력하세요..." onkeypress="if(event.keyCode==13) addMovie()">
+        <button id="add-btn" onclick="addMovie()">추가하기</button>
+        <button id="reset-btn" onclick="resetAll()">전체 초기화</button>
+    </div>
+
+    <div class="tier-board">
+        <div class="tier-row"><div class="tier-label s">S</div><div class="tier-content" id="tier-s"></div></div>
+        <div class="tier-row"><div class="tier-label a">A</div><div class="tier-content" id="tier-a"></div></div>
+        <div class="tier-row"><div class="tier-label b">B</div><div class="tier-content" id="tier-b"></div></div>
+        <div class="tier-row"><div class="tier-label c">C</div><div class="tier-content" id="tier-c"></div></div>
+        <div class="tier-row"><div class="tier-label d">D</div><div class="tier-content" id="tier-d"></div></div>
+    </div>
+
+    <div class="pool-section">
+        <div class="pool-title">🎬 영화 보관함 (드래그해서 옮기세요)</div>
+        <div id="pool" class="tier-content"></div>
+    </div>
+</div>
+
+<script>
+    // 1. 초기 데이터 로드
+    let movies = JSON.parse(localStorage.getItem('movieTierData')) || [];
+
+    // 2. 드래그 앤 드롭 설정 (SortableJS)
+    const containers = document.querySelectorAll('.tier-content');
+    containers.forEach(container => {
+        new Sortable(container, {
+            group: 'shared',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            onEnd: saveState // 이동이 끝나면 상태 저장
+        });
+    });
+
+    // 3. 영화 추가 함수
+    function addMovie() {
+        const input = document.getElementById('movie-input');
+        const title = input.value.trim();
+        
+        if (!title) return;
+
+        const newMovie = {
+            id: 'id-' + Date.now(),
+            title: title,
+            stars: 5,
+            tier: 'pool'
+        };
+
+        movies.push(newMovie);
+        renderMovie(newMovie);
+        input.value = '';
+        saveState();
+    }
+
+    // 4. 화면에 영화 카드 그리기
+    function renderMovie(movie) {
+        const card = document.createElement('div');
+        card.className = 'movie-card';
+        card.dataset.id = movie.id;
+        
+        card.innerHTML = `
+            <button class="delete-btn" onclick="deleteMovie(this)">✕</button>
+            <div class="movie-title">${movie.title}</div>
+            <div class="stars" onclick="cycleStars(this)">${'★'.repeat(movie.stars)}${'☆'.repeat(5-movie.stars)}</div>
+        `;
+
+        document.getElementById(movie.tier || 'pool').appendChild(card);
+    }
+
+    // 5. 별점 변경 (1~5점 순환)
+    function cycleStars(el) {
+        const currentStars = (el.innerText.match(/★/g) || []).length;
+        const nextStars = (currentStars % 5) + 1;
+        el.innerText = '★'.repeat(nextStars) + '☆'.repeat(5 - nextStars);
+        saveState();
+    }
+
+    // 6. 개별 삭제
+    function deleteMovie(btn) {
+        if(confirm("이 영화를 삭제할까요?")) {
+            btn.parentElement.remove();
+            saveState();
+        }
+    }
+
+    // 7. 전체 초기화
+    function resetAll() {
+        if (confirm("모든 데이터를 삭제하고 초기화하시겠습니까?")) {
+            localStorage.removeItem('movieTierData');
+            location.reload();
+        }
+    }
+
+    // 8. 현재 상태를 LocalStorage에 저장
+    function saveState() {
+        const currentState = [];
+        document.querySelectorAll('.tier-content').forEach(container => {
+            const tierId = container.id;
+            container.querySelectorAll('.movie-card').forEach(card => {
+                const starsText = card.querySelector('.stars').innerText;
+                currentState.push({
+                    id: card.dataset.id,
+                    title: card.querySelector('.movie-title').innerText,
+                    stars: (starsText.match(/★/g) || []).length,
+                    tier: tierId
+                });
+            });
+        });
+        localStorage.setItem('movieTierData', JSON.stringify(currentState));
+    }
+
+    // 초기 실행: 저장된 데이터 불러오기
+    window.onload = () => {
+        movies.forEach(m => renderMovie(m));
+    };
+</script>
+
+</body>
+</html>
